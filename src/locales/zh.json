@@ -1,0 +1,14 @@
+{
+  "app_title": "商场导航",
+  "app_subtitle": "选择出发楼层和车位，系统会以 3D 方式跨楼层绘制路线，并在楼层之间显示电梯换乘。",
+  "from_floor": "出发层",
+  "to_floor": "停车层",
+  "place": "车位",
+  "mode": "视图",
+  "mode_desktop": "桌面 / 自助机",
+  "mode_mobile": "手机",
+  "level": "楼层",
+  "parking": "停车",
+  "loading": "正在加载楼层…",
+  "route_hint": "路线：{from} → {to}，车位 {place}。"
+}

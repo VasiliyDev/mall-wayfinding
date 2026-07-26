@@ -1,0 +1,14 @@
+{
+  "app_title": "Mall Wayfinding",
+  "app_subtitle": "Pick a starting level and a parking spot — the route renders in 3D across floors, with a lift transition between them.",
+  "from_floor": "Start at",
+  "to_floor": "Parking",
+  "place": "Parking spot",
+  "mode": "View",
+  "mode_desktop": "Desktop / kiosk",
+  "mode_mobile": "Mobile",
+  "level": "level",
+  "parking": "parking",
+  "loading": "Loading floor…",
+  "route_hint": "Route: {from} → {to}, spot {place}."
+}
