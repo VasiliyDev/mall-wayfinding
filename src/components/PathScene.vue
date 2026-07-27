@@ -3,6 +3,7 @@
     id="scene-container"
     v-if="isAvailable"
     @click="stopCameraAnimation"
+    @pointerdown="stopCameraAnimation"
     :class="{ mobile: isMobile }"
   >
     <div class="camera-controls">
@@ -437,6 +438,7 @@ export default defineComponent({
 #scene-container {
   width: 100vw;
   height: 100vh;
+  height: 100dvh; // account for mobile browser chrome (Safari toolbar)
   position: relative;
   // Required for OrbitControls touch pan/zoom on mobile: without it the
   // browser swallows the drag as a page scroll and the controls never fire.
@@ -579,7 +581,8 @@ export default defineComponent({
 @media (max-width: 640px) {
   .camera-controls {
     right: 12px;
-    bottom: 12px;
+    // keep clear of the Safari bottom toolbar / home indicator
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
   .camera-controls__zoom {
     margin: 0 12px 0 10px;
