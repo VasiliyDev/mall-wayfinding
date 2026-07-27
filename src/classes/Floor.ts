@@ -97,24 +97,38 @@ export default class Floor {
               color: path.color,
               depthWrite: false,
               transparent: true,
-              opacity: 0.7,
+              opacity: 1,
             });
             const shapes = SVGLoader.createShapes(path);
             const scaleFactor = this.params.scale ? this.params.scale : 1;
-            const shape = shapes[0];
-            const geometry = new THREE.ShapeGeometry(shape);
-            geometry.scale(scaleFactor, scaleFactor, scaleFactor);
-            const vertices = geometry.attributes.position.array;
-            for (let k = 0; k < vertices.length; k += 3) {
-              vertices[k] += this.params.offsetX ? this.params.offsetX : 0;
-            }
-            for (let k = 1; k < vertices.length; k += 3) {
-              vertices[k] += this.params.offsetY ? this.params.offsetY : 0;
-            }
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.scale.y = -1;
-            //boundingBox.expandByObject(mesh);
-            group.add(mesh);
+            // const shape = shapes[0];
+            shapes.forEach((el) => {
+              const geometry = new THREE.ShapeGeometry(el);
+              geometry.scale(scaleFactor, scaleFactor, scaleFactor);
+              const vertices = geometry.attributes.position.array;
+              for (let k = 0; k < vertices.length; k += 3) {
+                vertices[k] += this.params.offsetX ? this.params.offsetX : 0;
+              }
+              for (let k = 1; k < vertices.length; k += 3) {
+                vertices[k] += this.params.offsetY ? this.params.offsetY : 0;
+              }
+              // console.log(i, geometry);
+              const mesh = new THREE.Mesh(geometry, material);
+              mesh.scale.y = -1;
+              //console.log('name', this.name);
+              if (this.name === 'L4' || this.name === 'L5') {
+                mesh.material.opacity = 0.5;
+              }
+              if (i === 0 || i === 2) {
+                mesh.position.set(-23.1, 23.2, -25);
+              }
+              if (i === 1) {
+                mesh.position.set(-2.78, 2.78, -3);
+              }
+
+              //boundingBox.expandByObject(mesh);
+              group.add(mesh);
+            });
           }
           //console.log(boundingBox);
           //group.scale.y = -1; //why does the image reflects on load???

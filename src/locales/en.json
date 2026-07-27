@@ -1,6 +1,11 @@
 {
   "app_title": "Mall Wayfinding",
-  "app_subtitle": "Pick a starting level and a parking spot — the route renders in 3D across floors, with a lift transition between them.",
+  "app_subtitle": "Two malls in 3D: a single-level mall routed from any of three kiosks, and a multi-level mall with a lift transition down to the car park.",
+  "mall": "Mall",
+  "mall_a": "Shopping · 3F (one level, kiosks)",
+  "mall_b": "Parking · L4/L5 → B3/B4",
+  "kiosk": "Kiosk",
+  "unit": "Shop / unit",
   "from_floor": "Start at",
   "to_floor": "Parking",
   "place": "Parking spot",
@@ -10,7 +15,8 @@
   "level": "level",
   "parking": "parking",
   "loading": "Loading floor…",
-  "route_hint": "Route: {from} → {to}, spot {place}.",
+  "route_hint_a": "3F · from kiosk {kiosk} → unit {place}.",
+  "route_hint_b": "{from} → {to}, spot {place}.",
   "options": "Options",
   "collapse": "Collapse"
 }

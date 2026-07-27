@@ -362,6 +362,7 @@ const objects = [
 const vertices = [
   {
     //0
+    entryLabel: '1',
     x: -18.1,
     y: -0.3,
     neighbours: [1],

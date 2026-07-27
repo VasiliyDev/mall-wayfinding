@@ -357,6 +357,7 @@ const vertices = [
     x: -18.1,
     y: -0.3,
     neighbours: [1],
+    entryLabel: '1',
   },
   //1
   {

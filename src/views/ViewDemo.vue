@@ -42,32 +42,61 @@
       <p class="panel__subtitle">{{ $t('app_subtitle') }}</p>
 
       <div class="panel__controls">
-        <label class="field">
-          <span class="field__label">{{ $t('from_floor') }}</span>
-          <select v-model="from" class="field__select">
-            <option v-for="f in fromFloors" :key="f" :value="f">
-              {{ f }} — {{ $t('level') }}
-            </option>
+        <!-- Which mall -->
+        <label class="field field--wide">
+          <span class="field__label">{{ $t('mall') }}</span>
+          <select v-model="mall" class="field__select">
+            <option value="A">{{ $t('mall_a') }}</option>
+            <option value="B">{{ $t('mall_b') }}</option>
           </select>
         </label>
 
-        <label class="field">
-          <span class="field__label">{{ $t('to_floor') }}</span>
-          <select v-model="to" class="field__select">
-            <option v-for="f in toFloors" :key="f" :value="f">
-              {{ f }} — {{ $t('parking') }}
-            </option>
-          </select>
-        </label>
+        <!-- Mall A: single level, choose kiosk + unit -->
+        <template v-if="mall === 'A'">
+          <label class="field">
+            <span class="field__label">{{ $t('kiosk') }}</span>
+            <select v-model="kiosk" class="field__select">
+              <option v-for="k in kiosks" :key="k" :value="k">
+                {{ $t('kiosk') }} {{ k }}
+              </option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">{{ $t('unit') }}</span>
+            <select v-model="place" class="field__select" :disabled="loading">
+              <option v-for="p in places" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </label>
+        </template>
 
-        <label class="field">
-          <span class="field__label">{{ $t('place') }}</span>
-          <select v-model="place" class="field__select" :disabled="loading">
-            <option v-for="p in places" :key="p" :value="p">{{ p }}</option>
-          </select>
-        </label>
+        <!-- Mall B: choose start level, parking level + spot -->
+        <template v-else>
+          <label class="field">
+            <span class="field__label">{{ $t('from_floor') }}</span>
+            <select v-model="from" class="field__select">
+              <option v-for="f in fromFloors" :key="f" :value="f">
+                {{ f }} — {{ $t('level') }}
+              </option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">{{ $t('to_floor') }}</span>
+            <select v-model="to" class="field__select">
+              <option v-for="f in toFloors" :key="f" :value="f">
+                {{ f }} — {{ $t('parking') }}
+              </option>
+            </select>
+          </label>
+          <label class="field field--wide">
+            <span class="field__label">{{ $t('place') }}</span>
+            <select v-model="place" class="field__select" :disabled="loading">
+              <option v-for="p in places" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </label>
+        </template>
 
-        <label class="field">
+        <!-- View mode -->
+        <label class="field field--wide">
           <span class="field__label">{{ $t('mode') }}</span>
           <select v-model="mode" class="field__select">
             <option value="desktop">{{ $t('mode_desktop') }}</option>
@@ -76,9 +105,7 @@
         </label>
       </div>
 
-      <p class="panel__hint">
-        {{ $t('route_hint', { from, to, place }) }}
-      </p>
+      <p class="panel__hint">{{ hint }}</p>
     </div>
 
     <!-- 3D scene -->
@@ -87,9 +114,10 @@
       <PathScene
         v-else-if="place"
         :key="sceneKey"
-        :floor-from="from"
-        :floor-to="to"
+        :floor-from="floorFrom"
+        :floor-to="floorTo"
         :place="place"
+        :entry-point="entryPoint"
         :is-mobile="isMobile"
       />
     </div>
@@ -108,21 +136,24 @@ export default defineComponent({
   components: { PathScene },
   data() {
     return {
-      // Upper levels double as the "starting point" (where the kiosk / lift is).
-      fromFloors: ['L4', 'L5'] as const,
-      // Parking levels hold the named spots.
-      toFloors: ['B3', 'B4'] as const,
       locales: [
         { code: 'en' as LocaleCode, label: 'EN' },
         { code: 'zh' as LocaleCode, label: '中文' },
       ],
+      mall: 'A' as 'A' | 'B',
+      // Mall A (single level, 3F): three kiosks as start points.
+      kiosks: ['1', '2', '3'],
+      kiosk: '1',
+      // Mall B (multi-level parking).
+      fromFloors: ['L4', 'L5'] as const,
+      toFloors: ['B3', 'B4'] as const,
       from: 'L4',
       to: 'B4',
+      // Shared destination (unit for A, spot for B).
       place: '' as string,
       places: [] as string[],
       mode: 'desktop' as 'desktop' | 'mobile',
       loading: true,
-      // Start collapsed on small screens so the map is not covered.
       panelOpen:
         typeof window === 'undefined' ? true : window.innerWidth > 640,
     };
@@ -134,12 +165,42 @@ export default defineComponent({
     locale(): string {
       return this.$i18n.locale;
     },
+    // Floor whose objects populate the destination selector.
+    targetFloor(): string {
+      return this.mall === 'A' ? '3F' : this.to;
+    },
+    // Empty for single-level mall A (kiosk→unit); the start level for mall B.
+    floorFrom(): string {
+      return this.mall === 'A' ? '' : this.from;
+    },
+    floorTo(): string {
+      return this.targetFloor;
+    },
+    entryPoint(): string {
+      return this.mall === 'A' ? this.kiosk : '1';
+    },
     sceneKey(): string {
-      return `${this.from}-${this.to}-${this.place}-${this.mode}`;
+      return [
+        this.mall,
+        this.floorFrom,
+        this.floorTo,
+        this.place,
+        this.kiosk,
+        this.mode,
+      ].join('-');
+    },
+    hint(): string {
+      return this.mall === 'A'
+        ? this.$t('route_hint_a', { kiosk: this.kiosk, place: this.place })
+        : this.$t('route_hint_b', {
+            from: this.from,
+            to: this.to,
+            place: this.place,
+          });
     },
   },
   watch: {
-    to: {
+    targetFloor: {
       immediate: true,
       handler(floor: string) {
         this.loadPlaces(floor);
@@ -158,7 +219,6 @@ export default defineComponent({
         this.places = objects
           .filter((o) => o.name && (o.type === 'normal' || o.type === 'mini'))
           .map((o) => o.name as string);
-        // Keep the current spot if it still exists, else pick the first one.
         if (!this.places.includes(this.place)) {
           this.place = this.places[0] ?? '';
         }
@@ -201,8 +261,6 @@ $accent: #133569;
     color: #555;
   }
 
-  // "Mobile" render mode framed as a phone — only on wide (desktop) viewports,
-  // where it's a meaningful preview. On real phones the scene fills the screen.
   @media (min-width: 768px) {
     &--mobile :deep(#scene-container) {
       width: 393px;
@@ -327,6 +385,10 @@ $accent: #133569;
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
 
   &__label {
     font-size: 11px;

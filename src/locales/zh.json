@@ -1,6 +1,11 @@
 {
   "app_title": "商场导航",
-  "app_subtitle": "选择出发楼层和车位，系统会以 3D 方式跨楼层绘制路线，并在楼层之间显示电梯换乘。",
+  "app_subtitle": "两个商场的 3D 导航：单层商场可从三个自助机之一规划路线；多层商场则带电梯换乘直达停车场。",
+  "mall": "商场",
+  "mall_a": "购物 · 3F（单层，自助机）",
+  "mall_b": "停车 · L4/L5 → B3/B4",
+  "kiosk": "自助机",
+  "unit": "店铺 / 单元",
   "from_floor": "出发层",
   "to_floor": "停车层",
   "place": "车位",
@@ -10,7 +15,8 @@
   "level": "楼层",
   "parking": "停车",
   "loading": "正在加载楼层…",
-  "route_hint": "路线：{from} → {to}，车位 {place}。",
+  "route_hint_a": "3F · 从自助机 {kiosk} → 单元 {place}。",
+  "route_hint_b": "{from} → {to}，车位 {place}。",
   "options": "选项",
   "collapse": "收起"
 }

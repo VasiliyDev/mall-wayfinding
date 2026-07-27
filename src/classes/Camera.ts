@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const AngleOffsetX = 120;
+const AngleOffsetY = 120;
 function easeOutCubic(x) {
   return 1 - Math.pow(1 - x, 3);
 }
@@ -20,7 +23,7 @@ export default class CameraController {
     );
     this.camera.up.set(0, 0, 1);
     // this.camera.position.set(120, -120, 180);
-    // this.camera.lookAt(0,0,40);
+    // this.camera.lookAt(0, 0, 40);
     // console.log(this.camera.rotation);
     // let vec = new THREE.Vector3();
     // this.camera.getWorldDirection(vec);
@@ -38,14 +41,14 @@ export default class CameraController {
   addOrbitControls(renderer, scene) {
     this.controls = new OrbitControls(this.camera, renderer.domElement);
     this.controls.addEventListener('change', () => {
-      var minPan = new THREE.Vector3(-40, -20, -10);
-      var maxPan = new THREE.Vector3(27, 25, 60);
-      this.controls.target.clamp(minPan, maxPan);
-      this.camera.position.set(
-        this.controls.target.x + 120,
-        this.controls.target.y - 120,
-        this.controls.target.z + 130,
-      );
+      // var minPan = new THREE.Vector3(-40, -20, -10);
+      // var maxPan = new THREE.Vector3(27, 25, 60);
+      // this.controls.target.clamp(minPan, maxPan);
+      // this.camera.position.set(
+      //   this.controls.target.x + AngleOffsetX,
+      //   this.controls.target.y - AngleOffsetY,
+      //   this.controls.target.z + 130,
+      // );
       renderer.render(scene, this.camera);
       const MAX_ZOOM = CameraController.ZOOM_VALUES.length - 1;
       const currentZoom = this.camera.zoom;
@@ -76,8 +79,8 @@ export default class CameraController {
   moveTo(position, zoom = 1, animate = false, params) {
     if (!animate) {
       this.camera.position.set(
-        position.x + 120,
-        position.y - 120,
+        position.x + AngleOffsetX,
+        position.y - AngleOffsetY,
         position.z + 130,
       );
       this.controls.target.set(position.x, position.y, position.z);
@@ -124,12 +127,16 @@ export default class CameraController {
           else if ((dz > 0 && finish.z < z) || (dz < 0 && finish.z > z))
             endAnimation = true;
           if (endAnimation) {
-            camera.position.set(finish.x + 120, finish.y - 120, finish.z + 130);
+            camera.position.set(
+              finish.x + AngleOffsetX,
+              finish.y - AngleOffsetY,
+              finish.z + 130,
+            );
             camera.zoom = zoomFinish;
             controls.target.set(finish.x, finish.y, finish.z);
             this.state = 'finished';
           } else {
-            camera.position.set(x + 120, y - 120, z + 130);
+            camera.position.set(x + AngleOffsetX, y - AngleOffsetY, z + 130);
             controls.target.set(x, y, z);
             camera.zoom = zoom;
           }

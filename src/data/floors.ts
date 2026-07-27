@@ -1,6 +1,7 @@
 import Floor from '@/classes/Floor';
 
 const FLOORS_DATA = {
+  '3F': import('@/data/floors/3F'),
   L4: import('@/data/floors/L4'),
   L5: import('@/data/floors/L5'),
   B3: import('@/data/floors/B3'),

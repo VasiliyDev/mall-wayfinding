@@ -1,21 +1,10 @@
 <template>
-  <!--  <div-->
-  <!--    style="position: fixed; right: 0; top: 0; background: #0000ff; color: #fff"-->
-  <!--  >-->
-  <!--    &lt;!&ndash;        {{mouseX}}-&#45;&#45;{{mouseY}}&ndash;&gt;-->
-  <!--  </div>-->
   <div
     id="scene-container"
     v-if="isAvailable"
     @click="stopCameraAnimation"
     :class="{ mobile: isMobile }"
   >
-    <!--    <div style="position: absolute; right: 0; top: 40px">-->
-    <!--      <input v-model="placeName" />-->
-    <!--      <button @click="findPath(placeName)">FIND</button>-->
-    <!--      <button @click="findNext">NEXT</button>-->
-    <!--      <button @click="findPrev">PREV</button>-->
-    <!--    </div>-->
     <div class="camera-controls">
       <button class="car" @click.stop="moveToObject('car')"></button>
       <div class="camera-controls__zoom">
@@ -45,7 +34,7 @@
       </div>
     </div>
   </div>
-  <div v-else>Incorrect Data</div>
+  <div v-else>Incorrect data</div>
 </template>
 
 <script lang="ts">
@@ -64,15 +53,19 @@ import CameraController from '@/classes/Camera';
 
 import { getFloor } from '@/data/floors';
 
-//import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-
 export default defineComponent({
   name: 'PathScene',
   props: {
+    // Empty floorFrom => single-floor mall (route from a kiosk to a unit on
+    // the same level). Set floorFrom => multi-floor (lift between levels).
     floorFrom: String,
     floorTo: String,
     place: String,
     isMobile: Boolean,
+    entryPoint: {
+      type: String,
+      default: '1',
+    },
   },
   data() {
     return {
@@ -90,7 +83,8 @@ export default defineComponent({
   },
   computed: {
     allFloors() {
-      return ['L5', 'L4', 'L3', 'L2', 'L1', 'B1', 'B2', 'B3', 'B4'];
+      if (this.floorTo === '3F') return ['3F'];
+      else return ['L5', 'L4', 'L3', 'L2', 'L1', 'B1', 'B2', 'B3', 'B4'];
     },
     activeFloors() {
       return [this.floorFrom, this.floorTo];
@@ -118,7 +112,13 @@ export default defineComponent({
           (el) => el.name === this.placeName,
         );
         if (!place) return;
-        moveTo = { position: { x: place.x, y: place.y, z: 0 }, zoom: 1.32 };
+        moveTo = { position: { x: place.x, y: place.y, z: 0 }, zoom: 1.74 };
+      } else if (name === 'entry' && this.entryPoint) {
+        const place = this.floorBot.vertices.find(
+          (el) => el.entryLabel === this.entryPoint,
+        );
+        if (!place) return;
+        moveTo = { position: { x: place.x, y: place.y, z: 0 }, zoom: 1.74 };
       } else return;
       const params = lift ? { speed: 0.2, easing: 'normal' } : {};
       const animation = this.camera.moveTo(
@@ -166,19 +166,20 @@ export default defineComponent({
     async findPath(name) {
       const place = this.floorObjects.find((el) => el.name === name);
       if (!place) {
-        alert('incorrect name');
+        console.error(`incorrect name: ${name}`);
         return;
       }
       this.setCarLabel({ x: place.x, y: place.y, z: 0.3 });
 
-      if (this.isMobile) return;
+      if (this.isMobile && this.floorFrom) return;
 
       this.lineAnimations = this.lineAnimations.filter(
         (el) => el.name !== 'path',
       );
 
       if (!this.PF) this.PF = new PathFinding(this.floorBot.vertices);
-      const path = this.PF.findPath(place);
+      const path = this.PF.findPath(place, this.entryPoint);
+
       const points = [];
       path.forEach((el) => {
         points.push(new THREE.Vector3(el.x, el.y, 0.22));
@@ -192,36 +193,48 @@ export default defineComponent({
       this.lineAnimations.push(this.pathCurve);
 
       const topFloorPath = [];
-      this.floorTop.path.forEach((el) => {
-        topFloorPath.push(new THREE.Vector3(el.x, el.y, 50.3));
-      });
-      const liftPoint = topFloorPath[topFloorPath.length - 1];
-      liftPoint.x -= 0.36;
-      liftPoint.y += 0.1;
-      const verticalPoints = [
-        new THREE.Vector3(liftPoint.x, liftPoint.y, 50),
-        new THREE.Vector3(liftPoint.x, liftPoint.y, 0.8),
-      ];
+      if (this.floorBot?.params?.path) {
+        const pathFromTerminal = [];
+        this.floorBot.path[this.entryPoint].forEach((el) => {
+          pathFromTerminal.push(new THREE.Vector3(el.x, el.y, 0.22));
+        });
+        this.terminalPath = new LineAnimation(pathFromTerminal);
+        this.terminalPath.init();
+        this.terminalPath.add(this.scene);
+        this.lineAnimations.push(this.terminalPath);
+      }
 
-      if (!this.verticalLine) {
-        this.verticalLine = new LineAnimation(verticalPoints);
-        this.verticalLine.init();
-        this.verticalLine.add(this.scene);
-        this.lineAnimations.push(this.verticalLine);
+      if (this.floorTop) {
+        this.floorTop.path.forEach((el) => {
+          topFloorPath.push(new THREE.Vector3(el.x, el.y, 50.3));
+        });
+        const liftPoint = topFloorPath[topFloorPath.length - 1];
+        liftPoint.x -= 0.36;
+        liftPoint.y += 0.1;
+        const verticalPoints = [
+          new THREE.Vector3(liftPoint.x, liftPoint.y, 50),
+          new THREE.Vector3(liftPoint.x, liftPoint.y, 0.8),
+        ];
+        if (!this.verticalLine) {
+          this.verticalLine = new LineAnimation(verticalPoints);
+          this.verticalLine.init();
+          this.verticalLine.add(this.scene);
+          this.lineAnimations.push(this.verticalLine);
 
-        this.topFloorLine = new LineAnimation(topFloorPath);
-        this.topFloorLine.init();
-        this.topFloorLine.add(this.scene);
-        this.lineAnimations.push(this.topFloorLine);
+          this.topFloorLine = new LineAnimation(topFloorPath);
+          this.topFloorLine.init();
+          this.topFloorLine.add(this.scene);
+          this.lineAnimations.push(this.topFloorLine);
 
-        const liftCaption = this.floorFrom + ' to ' + this.floorTo;
-        this.liftAnimation = new liftAnimation(
-          { x: liftPoint.x, y: liftPoint.y, z: 48 },
-          liftCaption,
-        );
-        await this.liftAnimation.init();
-        this.liftAnimation.add(this.scene);
-        this.lineAnimations.push(this.liftAnimation);
+          const liftCaption = this.floorFrom + ' to ' + this.floorTo;
+          this.liftAnimation = new liftAnimation(
+            { x: liftPoint.x, y: liftPoint.y, z: 48 },
+            liftCaption,
+          );
+          await this.liftAnimation.init();
+          this.liftAnimation.add(this.scene);
+          this.lineAnimations.push(this.liftAnimation);
+        }
       }
     },
 
@@ -263,24 +276,43 @@ export default defineComponent({
           this.zoomOutDisabled = val === 0;
         },
       );
-      this.$watch(
-        () => this.camera.curAltitude,
-        (val) => {
-          if (val > 20) this.currentFloor = this.floorTop.name;
-          else this.currentFloor = this.floorBot.name;
-        },
-      );
-      //this.camera.setView2d();
+      if (this.floorTop) {
+        this.$watch(
+          () => this.camera.curAltitude,
+          (val) => {
+            if (val > 20) this.currentFloor = this.floorTop.name;
+            else this.currentFloor = this.floorBot.name;
+          },
+        );
+      }
     },
 
     async drawFloors() {
       await this.floorBot.loadAssets();
       this.floorBot.draw(this.scene, 0);
-      // this.floorBot.drawVertices(this.scene,'numbers');
-      if (!this.isMobile) {
+      if (!this.isMobile && this.floorFrom) {
         await this.floorTop.loadAssets();
         this.floorTop.draw(this.scene, 50);
       }
+    },
+
+    // Keep the renderer and orthographic frustum in sync with the viewport
+    // (orientation change, mobile browser chrome show/hide).
+    onResize() {
+      if (!this.renderer || !this.camera || !this.container) return;
+      const w = this.container.clientWidth;
+      const h = this.container.clientHeight;
+      if (!w || !h) return;
+      this.renderer.setSize(w, h);
+      this.labelRenderer.setSize(w, h);
+      const d = 20;
+      const aspect = w / h;
+      const cam = this.camera.camera;
+      cam.left = -d * aspect;
+      cam.right = d * aspect;
+      cam.top = d;
+      cam.bottom = -d;
+      cam.updateProjectionMatrix();
     },
 
     async init() {
@@ -292,16 +324,22 @@ export default defineComponent({
       this.lineAnimations = [];
 
       this.findPath(this.placeName);
-      if (!this.isMobile) {
+
+      if (this.isMobile) {
+        this.moveToObject('car', false);
+      } else if (this.floorTop) {
         this.moveToObject(this.floorTop.name, false);
         this.moveToObject(this.floorBot.name, true, true);
-      } else this.moveToObject('car', false);
+      } else {
+        this.moveToObject('entry', false);
+        this.moveToObject('car', true, true);
+      }
     },
     animate: function () {
-      // Bail out (and stop the RAF loop) until the renderer/scene are ready,
-      // e.g. if init() failed — avoids spamming "reading 'render'" each frame.
+      // Bail (and stop the RAF loop) until the renderer/scene are ready, e.g.
+      // if init() failed — avoids spamming "reading 'render'" every frame.
       if (!this.renderer || !this.scene || !this.camera) return;
-      requestAnimationFrame(this.animate);
+      this.rafId = requestAnimationFrame(this.animate);
       if (this.lineAnimations && this.lineAnimations.length) {
         this.lineAnimations = this.lineAnimations.filter(
           (el) => el.state !== 'finished',
@@ -313,14 +351,13 @@ export default defineComponent({
       }
       this.renderer.render(this.scene, this.camera.camera);
       this.labelRenderer.render(this.scene, this.camera.camera);
-      // this.stats.update();
     },
   },
   // Must be mounted(), not created(): init() reads #scene-container from the
   // DOM, which only exists after this component's template is mounted.
   async mounted() {
     try {
-      this.floorTop = await getFloor(this.floorFrom);
+      if (this.floorFrom) this.floorTop = await getFloor(this.floorFrom);
       this.floorBot = await getFloor(this.floorTo);
     } catch (e) {
       this.isAvailable = false;
@@ -329,6 +366,7 @@ export default defineComponent({
     }
 
     this.floorObjects = this.floorBot.objects;
+
     if (!this.floorObjects.find((el) => el.name === this.place)) {
       this.isAvailable = false;
       console.error(`place ${this.place} not found`);
@@ -336,15 +374,16 @@ export default defineComponent({
     }
     this.placeName = this.place;
 
-    // this.stats = new Stats();
-    // document.body.appendChild(this.stats.dom);
-
     this.init();
+    window.addEventListener('resize', this.onResize);
     this.animate();
-    // this.container.addEventListener('mousemove', (event) => {
-    //   this.mouseX = ((event.clientX / window.innerWidth) * 2 - 1)*55.8;
-    //   this.mouseY = ((event.clientY / window.innerHeight) * 2 - 1)*29.8;
-    // });
+  },
+  beforeUnmount() {
+    // Stop the animation loop and release the context so remounts (via :key)
+    // don't stack RAF loops / leak WebGL contexts.
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+    window.removeEventListener('resize', this.onResize);
+    this.renderer?.dispose?.();
   },
 });
 </script>
@@ -358,11 +397,13 @@ export default defineComponent({
     transform: scale(0.9);
   }
 }
+
 .car-label {
   width: 80px;
   height: 80px;
   position: relative;
 }
+
 .car-label::after {
   transform-origin: bottom;
   content: '';
@@ -383,13 +424,16 @@ export default defineComponent({
   background-size: 100% auto;
   background-image: url('~@/assets/car.svg');
 }
+
 .mobile .car-label::after {
   background-image: url('~@/assets/car-mobile.svg');
 }
+
 .disabled {
   pointer-events: none;
   opacity: 0.6;
 }
+
 #scene-container {
   width: 100vw;
   height: 100vh;
@@ -401,6 +445,7 @@ export default defineComponent({
 #scene-container canvas {
   touch-action: none;
 }
+
 .camera-controls {
   display: flex;
   align-items: flex-end;
@@ -409,6 +454,7 @@ export default defineComponent({
   bottom: 64px;
   z-index: 10;
 }
+
 .camera-controls__zoom {
   margin: 0 64px 0 10px;
   display: flex;
@@ -416,6 +462,7 @@ export default defineComponent({
   border-radius: 100px;
   height: 100%;
 }
+
 .camera-controls button {
   cursor: pointer;
   display: flex;
@@ -435,52 +482,63 @@ export default defineComponent({
   background-repeat: no-repeat;
   background-position: center;
 }
+
 .camera-controls button.plus {
   width: 56px;
   height: 56px;
   background-image: url('~@/assets/plus.svg');
 }
+
 .camera-controls button.minus {
   background-image: url('~@/assets/minus.svg');
   width: 56px;
   height: 56px;
 }
+
 .camera-controls button.car {
   background-image: url('~@/assets/car-fill.svg');
   width: 56px;
   height: 56px;
   margin-right: 24px;
 }
+
 .camera-controls__zoom button {
   box-shadow: none;
 }
+
 .camera-controls__zoom button.disabled {
   color: #ccc;
   background-blend-mode: lighten;
   background-color: #ffffffa8;
   pointer-events: none;
 }
+
 .camera-controls__zoom button:first-child {
   border-radius: 100% 0 0 100%;
   border-right: 1px solid #eee;
 }
+
 .camera-controls__floors {
   display: flex;
   flex-direction: column;
   gap: 24px;
+
   button {
     width: 56px;
     height: 56px;
     font-size: 24px;
   }
 }
+
 .camera-controls__floors button.inactive {
   opacity: 0.2;
 }
+
 .camera-controls__floors button.current {
   color: #fff;
   background-color: #050c1e;
 }
+
 .mobile {
   .camera-controls {
     flex-direction: column-reverse;
@@ -490,6 +548,7 @@ export default defineComponent({
       flex-direction: column;
       margin-right: 0;
       margin-bottom: 24px;
+
       button {
         &:first-child {
           border-radius: 100% 100% 0 0;
@@ -497,6 +556,7 @@ export default defineComponent({
         }
       }
     }
+
     .car {
       margin-right: 0;
     }

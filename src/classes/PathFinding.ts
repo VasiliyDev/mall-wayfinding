@@ -1,6 +1,6 @@
 export default class PathFinding {
   vertices = [];
-
+  startIndex = 0;
   constructor(vertices) {
     this.setVertices(vertices);
   }
@@ -15,11 +15,10 @@ export default class PathFinding {
     );
   }
 
-  calculateDistance() {
+  calculateDistance(START_VERTEX = 0) {
     this.vertices.forEach((el) => {
       el.distance = -1;
     });
-    const START_VERTEX = 0;
     let checkedVertices = [START_VERTEX];
     let queue = [START_VERTEX];
     this.vertices[START_VERTEX].distance = 0;
@@ -43,8 +42,15 @@ export default class PathFinding {
     // }));
   }
 
-  findPath(place) {
-    if (this.vertices[1].distance !== -1) this.calculateDistance();
+  findPath(place, entryLabel = '') {
+    if (entryLabel) {
+      this.startIndex = this.vertices.findIndex(
+        (el) => el?.entryLabel === entryLabel,
+      );
+      if (this.startIndex === -1) this.startIndex = 0;
+    }
+    if (this.vertices[this.startIndex].distance !== -1)
+      this.calculateDistance(this.startIndex);
     const path = this.pathToPlace(place);
     if (path[0].index === 0) return path;
     if (!path[0].index) console.log('BUG INDEX!!');
@@ -235,7 +241,7 @@ export default class PathFinding {
   }
 
   backPath(v) {
-    const START_VERTEX = 0;
+    const START_VERTEX = this.startIndex;
     let indexes = [v];
     let path = [];
     let tr = 0;
