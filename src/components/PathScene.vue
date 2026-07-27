@@ -453,6 +453,9 @@ export default defineComponent({
   right: 64px;
   bottom: 64px;
   z-index: 10;
+  // The container spans a tall region (esp. the 9-floor column); let drags
+  // pass through its empty areas to the canvas — only the controls capture.
+  pointer-events: none;
 }
 
 .camera-controls__zoom {
@@ -461,10 +464,12 @@ export default defineComponent({
   background: #fff;
   border-radius: 100px;
   height: 100%;
+  pointer-events: auto;
 }
 
 .camera-controls button {
   cursor: pointer;
+  pointer-events: auto;
   display: flex;
   justify-content: center;
   align-items: center;
