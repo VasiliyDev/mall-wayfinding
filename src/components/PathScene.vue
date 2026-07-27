@@ -329,8 +329,11 @@ export default defineComponent({
       if (this.isMobile) {
         this.moveToObject('car', false);
       } else if (this.floorTop) {
+        // Rest on the selected upper floor so the level (L4 vs L5) and its
+        // kiosks/terminals are actually visible. The route + lift lead down to
+        // the parking level, reachable via the floor buttons.
+        this.moveToObject(this.floorBot.name, false);
         this.moveToObject(this.floorTop.name, false);
-        this.moveToObject(this.floorBot.name, true, true);
       } else {
         this.moveToObject('entry', false);
         this.moveToObject('car', true, true);
