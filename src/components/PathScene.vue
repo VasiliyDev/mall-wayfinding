@@ -298,6 +298,9 @@ export default defineComponent({
       } else this.moveToObject('car', false);
     },
     animate: function () {
+      // Bail out (and stop the RAF loop) until the renderer/scene are ready,
+      // e.g. if init() failed — avoids spamming "reading 'render'" each frame.
+      if (!this.renderer || !this.scene || !this.camera) return;
       requestAnimationFrame(this.animate);
       if (this.lineAnimations && this.lineAnimations.length) {
         this.lineAnimations = this.lineAnimations.filter(
@@ -313,7 +316,9 @@ export default defineComponent({
       // this.stats.update();
     },
   },
-  async created() {
+  // Must be mounted(), not created(): init() reads #scene-container from the
+  // DOM, which only exists after this component's template is mounted.
+  async mounted() {
     try {
       this.floorTop = await getFloor(this.floorFrom);
       this.floorBot = await getFloor(this.floorTo);
