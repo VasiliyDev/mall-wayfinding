@@ -10,5 +10,7 @@
   "level": "楼层",
   "parking": "停车",
   "loading": "正在加载楼层…",
-  "route_hint": "路线：{from} → {to}，车位 {place}。"
+  "route_hint": "路线：{from} → {to}，车位 {place}。",
+  "options": "选项",
+  "collapse": "收起"
 }

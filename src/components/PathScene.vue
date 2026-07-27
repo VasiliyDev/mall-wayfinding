@@ -394,6 +394,12 @@ export default defineComponent({
   width: 100vw;
   height: 100vh;
   position: relative;
+  // Required for OrbitControls touch pan/zoom on mobile: without it the
+  // browser swallows the drag as a page scroll and the controls never fire.
+  touch-action: none;
+}
+#scene-container canvas {
+  touch-action: none;
 }
 .camera-controls {
   display: flex;
@@ -501,6 +507,17 @@ export default defineComponent({
       font-size: 24px;
       padding: 0;
     }
+  }
+}
+
+// On phones the kiosk-sized 64px insets push the controls far from the edge.
+@media (max-width: 640px) {
+  .camera-controls {
+    right: 12px;
+    bottom: 12px;
+  }
+  .camera-controls__zoom {
+    margin: 0 12px 0 10px;
   }
 }
 </style>

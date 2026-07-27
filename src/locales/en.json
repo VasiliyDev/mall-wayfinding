@@ -10,5 +10,7 @@
   "level": "level",
   "parking": "parking",
   "loading": "Loading floor…",
-  "route_hint": "Route: {from} → {to}, spot {place}."
+  "route_hint": "Route: {from} → {to}, spot {place}.",
+  "options": "Options",
+  "collapse": "Collapse"
 }

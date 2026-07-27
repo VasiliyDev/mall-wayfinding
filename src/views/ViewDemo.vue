@@ -1,19 +1,40 @@
 <template>
   <div class="demo">
+    <!-- Collapsed state: floating button to reopen the panel -->
+    <button
+      v-if="!panelOpen"
+      class="panel-fab"
+      type="button"
+      :aria-label="$t('options')"
+      @click="panelOpen = true"
+    >
+      ☰
+    </button>
+
     <!-- Control panel -->
-    <div class="panel">
+    <div v-show="panelOpen" class="panel">
       <div class="panel__head">
         <h1 class="panel__title">{{ $t('app_title') }}</h1>
-        <div class="panel__lang">
+        <div class="panel__actions">
+          <div class="panel__lang">
+            <button
+              v-for="l in locales"
+              :key="l.code"
+              class="panel__lang-btn"
+              :class="{ 'is-active': locale === l.code }"
+              type="button"
+              @click="setLocale(l.code)"
+            >
+              {{ l.label }}
+            </button>
+          </div>
           <button
-            v-for="l in locales"
-            :key="l.code"
-            class="panel__lang-btn"
-            :class="{ 'is-active': locale === l.code }"
+            class="panel__collapse"
             type="button"
-            @click="setLocale(l.code)"
+            :aria-label="$t('collapse')"
+            @click="panelOpen = false"
           >
-            {{ l.label }}
+            ×
           </button>
         </div>
       </div>
@@ -101,6 +122,9 @@ export default defineComponent({
       places: [] as string[],
       mode: 'desktop' as 'desktop' | 'mobile',
       loading: true,
+      // Start collapsed on small screens so the map is not covered.
+      panelOpen:
+        typeof window === 'undefined' ? true : window.innerWidth > 640,
     };
   },
   computed: {
@@ -177,26 +201,45 @@ $accent: #133569;
     color: #555;
   }
 
-  // Constrain the "mobile" mode to a phone-sized frame so the difference is
-  // obvious in the showcase.
-  &--mobile :deep(#scene-container) {
-    width: 393px;
-    max-width: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  // "Mobile" render mode framed as a phone — only on wide (desktop) viewports,
+  // where it's a meaningful preview. On real phones the scene fills the screen.
+  @media (min-width: 768px) {
+    &--mobile :deep(#scene-container) {
+      width: 393px;
+      max-width: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+    }
   }
+}
+
+.panel-fab {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: $accent;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 29, 66, 0.24);
 }
 
 .panel {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 16px;
+  left: 16px;
   z-index: 20;
   width: 320px;
-  max-width: calc(100vw - 40px);
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.94);
+  max-width: calc(100vw - 32px);
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(6px);
   border-radius: 14px;
   box-shadow: 0 4px 24px rgba(0, 29, 66, 0.16);
@@ -205,7 +248,7 @@ $accent: #133569;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
   }
 
   &__title {
@@ -213,6 +256,12 @@ $accent: #133569;
     font-size: 18px;
     font-weight: 700;
     color: $accent;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   &__lang {
@@ -235,6 +284,22 @@ $accent: #133569;
       border-color: $accent;
       color: #fff;
     }
+  }
+
+  &__collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid #d0d7e2;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 18px;
+    line-height: 1;
+    color: #556;
+    cursor: pointer;
   }
 
   &__subtitle {
